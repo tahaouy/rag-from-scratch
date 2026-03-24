@@ -1,6 +1,6 @@
 # rag-from-scratch
 
-Added semantic embedding and FAISS vector storage.
+Added BM25 (from scratch) and hybrid retrieval combining semantic + keyword matching.
 
 ## Install
 
@@ -8,32 +8,24 @@ Added semantic embedding and FAISS vector storage.
 pip install -r requirements.txt
 ```
 
-## Components
+## Retrieval strategies
 
-- `src/loader.py` — PDF text extraction
-- `src/chunker.py` — paragraph / sentence / fixed-size chunking
-- `src/embedder.py` — dense embeddings via SentenceTransformers (all-MiniLM-L6-v2)
-- `src/vectorstore.py` — FAISS flat inner-product index
+**Semantic** — FAISS inner-product search on normalized embeddings (cosine similarity).
+Good at finding conceptually related chunks even when exact words differ.
 
-## Why all-MiniLM-L6-v2
+**BM25** — TF-IDF variant with length normalization, implemented from scratch.
+Good at exact keyword matches, fast, no GPU needed.
 
-Fast, lightweight (22M params), strong on semantic similarity benchmarks.
-Good tradeoff between quality and inference speed for a local pipeline.
+**Hybrid** — 60% semantic + 40% BM25, scores normalized to [0,1] before combining.
+Consistently outperforms either method alone on domain-specific documents.
 
-## Usage
+## Chunking strategy comparison
 
-```python
-from src.loader import load_all_pdfs
-from src.chunker import chunk_pages
-from src.vectorstore import build_index, search
-from src.embedder import embed_query
+| Strategy | Pros | Cons |
+|---|---|---|
+| Paragraph | Preserves semantic units | Variable chunk size |
+| Sentence | Fine-grained, good recall | Loses context |
+| Fixed-size | Predictable | Cuts mid-sentence |
 
-pages = load_all_pdfs("data/pdfs")
-chunks = chunk_pages(pages)
-index, chunks = build_index(chunks)
-
-q = embed_query("What is the main topic?")
-results = search(q, index, chunks, top_k=5)
-for r in results:
-    print(str(r["score"]) + " | " + r["chunk"]["text"][:100])
-```
+Paragraph is the default because it keeps the natural semantic unit intact,
+which leads to higher quality embeddings and more coherent retrieved context.
