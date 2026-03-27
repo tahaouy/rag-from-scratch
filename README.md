@@ -1,6 +1,6 @@
 # rag-from-scratch
 
-A full Retrieval-Augmented Generation pipeline built from scratch — no LangChain, no abstractions.
+RAG system built from scratch — PDF chunking, FAISS vector search, BM25 hybrid retrieval and LLM generation without LangChain
 Ask questions on PDF documents. Every component implemented manually.
 
 Generation backend: Groq API (free, fast, no local GPU needed).
